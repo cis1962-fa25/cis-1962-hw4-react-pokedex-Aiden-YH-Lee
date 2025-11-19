@@ -27,12 +27,14 @@ Get a paginated list of Pokemon.
 **Endpoint**: `GET /pokemon/`
 
 **Query Parameters**:
+
 - `limit` (number, required): Maximum number of Pokemon to return
 - `offset` (number, required): Number of Pokemon to skip
 
 **Response**: `Pokemon[]`
 
 **Example Request**:
+
 ```
 GET https://hw4.cis1962.esinx.net/api/pokemon/?limit=10&offset=0
 ```
@@ -44,11 +46,13 @@ Get detailed information about a specific Pokemon.
 **Endpoint**: `GET /pokemon/:name`
 
 **Path Parameters**:
+
 - `name` (string, required): The name of the Pokemon
 
 **Response**: `Pokemon`
 
 **Example Request**:
+
 ```
 GET https://hw4.cis1962.esinx.net/api/pokemon/pikachu
 ```
@@ -64,11 +68,13 @@ Get a list of all Box entry IDs for the authenticated user.
 **Endpoint**: `GET /box/`
 
 **Headers**:
+
 - `Authorization: Bearer <JWT_TOKEN>` (required)
 
 **Response**: `string[]` (array of Box entry IDs)
 
 **Example Request**:
+
 ```
 GET https://hw4.cis1962.esinx.net/api/box/
 Authorization: Bearer <JWT_TOKEN>
@@ -81,6 +87,7 @@ Create a new Box entry for the authenticated user.
 **Endpoint**: `POST /box/`
 
 **Headers**:
+
 - `Authorization: Bearer <JWT_TOKEN>` (required)
 - `Content-Type: application/json`
 
@@ -89,6 +96,7 @@ Create a new Box entry for the authenticated user.
 **Response**: `BoxEntry`
 
 **Example Request**:
+
 ```
 POST https://hw4.cis1962.esinx.net/api/box/
 Authorization: Bearer <JWT_TOKEN>
@@ -110,14 +118,17 @@ Get a specific Box entry by ID.
 **Endpoint**: `GET /box/:id`
 
 **Path Parameters**:
+
 - `id` (string, required): The Box entry ID
 
 **Headers**:
+
 - `Authorization: Bearer <JWT_TOKEN>` (required)
 
 **Response**: `BoxEntry`
 
 **Example Request**:
+
 ```
 GET https://hw4.cis1962.esinx.net/api/box/clx1234567890
 Authorization: Bearer <JWT_TOKEN>
@@ -130,9 +141,11 @@ Update an existing Box entry. All fields are optional.
 **Endpoint**: `PUT /box/:id`
 
 **Path Parameters**:
+
 - `id` (string, required): The Box entry ID
 
 **Headers**:
+
 - `Authorization: Bearer <JWT_TOKEN>` (required)
 - `Content-Type: application/json`
 
@@ -141,6 +154,7 @@ Update an existing Box entry. All fields are optional.
 **Response**: `BoxEntry`
 
 **Example Request**:
+
 ```
 PUT https://hw4.cis1962.esinx.net/api/box/clx1234567890
 Authorization: Bearer <JWT_TOKEN>
@@ -159,14 +173,17 @@ Delete a specific Box entry.
 **Endpoint**: `DELETE /box/:id`
 
 **Path Parameters**:
+
 - `id` (string, required): The Box entry ID
 
 **Headers**:
+
 - `Authorization: Bearer <JWT_TOKEN>` (required)
 
 **Response**: `void` (204 No Content)
 
 **Example Request**:
+
 ```
 DELETE https://hw4.cis1962.esinx.net/api/box/clx1234567890
 Authorization: Bearer <JWT_TOKEN>
@@ -179,11 +196,13 @@ Delete all Box entries for the authenticated user.
 **Endpoint**: `DELETE /box/`
 
 **Headers**:
+
 - `Authorization: Bearer <JWT_TOKEN>` (required)
 
 **Response**: `void` (204 No Content)
 
 **Example Request**:
+
 ```
 DELETE https://hw4.cis1962.esinx.net/api/box/
 Authorization: Bearer <JWT_TOKEN>
