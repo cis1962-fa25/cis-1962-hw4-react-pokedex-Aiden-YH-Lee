@@ -6,16 +6,9 @@ interface PokemonListProps {
     onPokemonClick?: (pokemon: Pokemon) => void;
 }
 
-const gridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-    gap: '1.5rem',
-    padding: '2rem',
-};
-
 export function PokemonList({ pokemonList, onPokemonClick }: PokemonListProps) {
     return (
-        <div style={gridStyle} className="pokemon-list">
+        <div className="pokemon-list pokemon-grid">
             {pokemonList.map((pokemon) => (
                 <PokemonCard key={pokemon.id} pokemon={pokemon} onClick={() => onPokemonClick?.(pokemon)} />
             ))}

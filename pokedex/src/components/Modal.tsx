@@ -1,4 +1,3 @@
-// Modal.tsx - Generic reusable modal
 interface ModalProps {
     isOpen: boolean;
     onClose: () => void;

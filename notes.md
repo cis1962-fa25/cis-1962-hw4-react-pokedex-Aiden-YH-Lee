@@ -860,3 +860,613 @@ useEffect(() => {
 ```
 
 This works but is harder to read. The named function approach is preferred.
+
+---
+
+## CSS Grid for Responsive Layouts
+
+### The Problem
+
+We want a grid of cards that automatically adjusts columns based on screen size, without writing media queries for every breakpoint.
+
+### The Solution: `auto-fill` and `minmax`
+
+```css
+.pokemon-grid {
+    display: grid;
+    /* The Magic Line */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+```
+
+### How it Works
+
+1. **`repeat(auto-fill, ...)`**: "Fit as many columns as possible in the row."
+2. **`minmax(200px, 1fr)`**:
+   - **Minimum**: Each column must be at least `200px` wide.
+   - **Maximum**: If there's extra space, share it equally (`1fr`).
+
+### Result
+
+- **Large Screen**: Many columns (e.g., 5 columns of 250px).
+- **Small Screen**: Fewer columns (e.g., 2 columns of 200px).
+- **Mobile**: 1 column (if screen < 400px).
+
+---
+
+## CSS Modules
+
+### What are CSS Modules?
+
+A way to scope CSS to a specific component so class names don't clash globally.
+
+### File Naming
+
+Must end in `.module.css` (e.g., `PokemonCard.module.css`).
+
+### Usage
+
+**1. Create the CSS file (`PokemonCard.module.css`)**
+
+```css
+/* Standard CSS syntax */
+.pokemonCard {
+    background: white;
+    border: 1px solid #ddd;
+}
+
+.cardImage {
+    width: 100%;
+}
+```
+
+**2. Import and Use in Component (`PokemonCard.tsx`)**
+
+```typescript
+import styles from './PokemonCard.module.css';
+
+export function PokemonCard() {
+    // Access classes as properties of the styles object
+    return (
+        <div className={styles.pokemonCard}>
+            <img className={styles.cardImage} />
+        </div>
+    );
+}
+```
+
+### Important Note on Naming
+
+- **CSS**: You can use kebab-case (`.pokemon-card`) or camelCase (`.pokemonCard`).
+- **JS**: camelCase is easier (`styles.pokemonCard`).
+- If you use kebab-case in CSS, you must use bracket notation in JS: `styles['pokemon-card']`.
+
+---
+
+## Modal Component Pattern
+
+### The "Children" Prop
+
+To make a Modal reusable, it shouldn't know *what* it's displaying. It should just be a container. We use the special `children` prop for this.
+
+```typescript
+interface ModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    children: React.ReactNode; // Accepts any valid JSX
+}
+
+export function Modal({ isOpen, onClose, children }: ModalProps) {
+    if (!isOpen) return null;
+
+    return (
+        <div className="overlay">
+            <div className="content">
+                {children} {/* Render whatever was passed inside */}
+            </div>
+        </div>
+    );
+}
+```
+
+### Usage in Parent
+
+```typescript
+<Modal isOpen={showModal} onClose={() => setShowModal(false)}>
+    {/* We can put ANYTHING here */}
+    <PokemonDetails pokemon={selectedPokemon} />
+</Modal>
+```
+
+---
+
+## Fetching Details Pattern
+
+### The Scenario
+
+1. **List View**: API returns minimal data (name, url).
+2. **Detail View**: Needs full data (stats, moves, abilities).
+
+### The Pattern: Fetch on Mount
+
+Don't fetch everything upfront. Fetch details only when the specific component mounts.
+
+**1. Parent (App.tsx)**
+
+Passes the minimal info (like name or ID) to the child.
+
+```typescript
+{selectedPokemon && <PokemonDetails pokemon={selectedPokemon} />}
+```
+
+**2. Child (PokemonDetails.tsx)**
+
+Uses `useEffect` to fetch full details when it loads.
+
+```typescript
+export function PokemonDetails({ pokemon }: Props) {
+    const [details, setDetails] = useState<Pokemon | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            // Fetch full details using the name from props
+            const data = await PokemonAPI.get_pokemon_by_name(pokemon.name);
+            setDetails(data);
+            setLoading(false);
+        };
+
+        fetchData();
+    }, [pokemon.name]); // Re-run if pokemon name changes
+
+    if (loading) return <div>Loading...</div>;
+    if (!details) return null;
+
+    return (
+        <div>
+            <h1>{details.name}</h1>
+            <p>HP: {details.stats.hp}</p>
+        </div>
+    );
+}
+```
+
+---
+
+## Interfaces vs. Classes vs. Python Dataclasses
+
+### TypeScript Interfaces vs. Python Dataclasses
+
+| Feature | TypeScript Interface | Python Dataclass |
+| :--- | :--- | :--- |
+| **Nature** | Structural contract (compile-time only) | Class generator (runtime existence) |
+| **Output** | Removed in compiled JavaScript | Exists as a Python class at runtime |
+| **Usage** | Defining shape of JSON/Objects | Creating objects with state/methods |
+| **Validation** | Static (during coding) | Runtime (if using libraries like Pydantic) |
+
+**Key Takeaway**: Interfaces are "ghosts" that disappear after compilation. They just tell TypeScript "expect this shape". Dataclasses are real object factories.
+
+### Classes vs. Interfaces in TypeScript
+
+- **Use Interfaces** when:
+  - You just need to define the **shape** of data (e.g., API responses, Props).
+  - You don't need methods or internal state logic attached to the data itself.
+  - *Most React props and state definitions use Interfaces.*
+
+- **Use Classes** when:
+  - You need **runtime code** (methods, constructors).
+  - You need `instanceof` checks.
+  - You are managing complex stateful logic (though React Hooks often replace this).
+
+---
+
+## Controlled Components (Forms)
+
+In HTML, input elements like `<input>` maintain their own state. In React, we want the **state to be the single source of truth**.
+
+### The Pattern
+
+1. **State**: Create a state variable for the input value.
+2. **Value Prop**: Bind the input's `value` to that state.
+3. **OnChange**: Update the state whenever the user types.
+
+```tsx
+const [name, setName] = useState("");
+
+// The input is "controlled" by React state
+<input 
+    value={name}                  // 1. Display current state
+    onChange={(e) => setName(e.target.value)} // 2. Update state on change
+/>
+```
+
+---
+
+## Passing Functions as Props
+
+### 1. Direct Reference (`onClick={handleClick}`)
+
+Passes the function itself. It will be called with the event object (or whatever arguments the child component passes).
+
+```tsx
+const handleClick = (event) => { console.log("Clicked"); };
+<button onClick={handleClick}>Click Me</button>
+```
+
+### 2. Arrow Function Wrapper (`onClick={() => handleClick(id)}`)
+
+Creates a **new function** that calls your function. Essential when you need to pass **custom arguments**.
+
+```tsx
+const deleteItem = (id) => { ... };
+// WRONG: onClick={deleteItem(5)} -> Calls immediately on render!
+// RIGHT: onClick={() => deleteItem(5)} -> Calls only when clicked
+<button onClick={() => deleteItem(5)}>Delete</button>
+```
+
+### 3. Common Pitfall: Execution during Render
+
+If you write `onClick={myFunction()}`, React executes `myFunction` *immediately* when the component renders, not when the user clicks.
+
+---
+
+## Debugging Checklist
+
+### API Headers
+
+When sending JSON data with a Bearer token, ensure headers are structured correctly:
+
+**Incorrect:**
+
+```typescript
+headers: {
+    'Authorization: Bearer': token // Wrong key
+}
+```
+
+**Correct:**
+
+```typescript
+headers: {
+    'Authorization': 'Bearer ' + token, // Standard HTTP format
+    'Content-Type': 'application/json'
+}
+```
+
+### Prop Drilling (Modal Closing)
+
+If a child component (like a Modal) isn't closing:
+
+1. Check if the **Parent** (`App.tsx`) is passing the close handler (`onClose={closeModal}`).
+2. Check if the **Child** (`PokemonDetails.tsx`) accepts it in its Interface.
+3. Check if the **Grandchild** (if applicable) calls it correctly.
+
+---
+
+## Advanced React Patterns
+
+### Incremental Development Strategy
+
+When building complex features with multiple interconnected components, use an incremental approach:
+
+1. **State Management First**: Establish app-level state and navigation structure
+2. **Atomic Components**: Build smallest reusable pieces (individual cards)
+3. **Container Components**: Create list/collection managers
+4. **Feature Extension**: Enhance existing components with new modes
+5. **Integration Testing**: Connect all pieces and verify workflow
+
+**Why This Works**: Catches errors early, allows for easier debugging, and ensures each piece works independently before integration.
+
+### Component Data Fetching Patterns
+
+**Self-Contained vs Parent-Fetched**:
+
+Components can fetch their own data (autonomous) or receive it from parent (controlled):
+
+```typescript
+// Self-contained: Component fetches its own data
+function BoxCard({ pokemonName }) {
+    const [pokemon, setPokemon] = useState(null);
+    useEffect(() => {
+        fetchPokemon(pokemonName).then(setPokemon);
+    }, [pokemonName]);
+}
+
+// Parent-controlled: Parent provides all data
+function BoxCard({ pokemon }) {
+    // Just display, no fetching
+}
+```
+
+**Trade-offs**:
+
+- **Self-contained**: More flexible, parallel loading, but harder to coordinate
+- **Parent-controlled**: Easier to manage loading states, but parent complexity grows
+
+### Conditional Component Modes
+
+A single component can handle multiple operations using conditional logic:
+
+**Pattern**: Optional props change behavior
+
+```typescript
+interface FormProps {
+    initialData?: Entry;  // Present = Edit mode, Absent = Create mode
+}
+
+function Form({ initialData }: FormProps) {
+    const isEditing = !!initialData;  // Convert to boolean
+    
+    // Conditional behavior
+    const submitHandler = isEditing ? updateAPI : createAPI;
+    const buttonText = isEditing ? "Update" : "Create";
+}
+```
+
+**Benefits**: DRY (Don't Repeat Yourself), single source of truth, easier maintenance.
+
+---
+
+## useEffect Cleanup Functions
+
+### The Race Condition Problem
+
+When async operations occur in `useEffect`, subsequent effect runs can cause **race conditions**:
+
+**Scenario**: User clicks "Next Page" rapidly
+
+1. Effect 1 starts fetching Page 1
+2. User clicks Next → Effect 2 starts fetching Page 2
+3. Page 2 data arrives → State updates to Page 2 ✓
+4. Page 1 data arrives (slower) → State updates to Page 1 ✗ **WRONG!**
+
+Result: UI shows "Page 2" but displays Page 1 data.
+
+### Solution: Cleanup Function with Ignore Flag
+
+```typescript
+useEffect(() => {
+    let ignore = false;  // Local to this effect instance
+    
+    const fetchData = async () => {
+        const data = await API.fetch();
+        if (!ignore) {  // Only update if still valid
+            setState(data);
+        }
+    };
+    
+    fetchData();
+    
+    // Cleanup function runs when:
+    // 1. Dependencies change (new effect about to run)
+    // 2. Component unmounts
+    return () => { 
+        ignore = true;  // Invalidate this effect
+    };
+}, [dependency]);
+```
+
+### How Cleanup Works
+
+React calls the cleanup function BEFORE running the effect again:
+
+```
+User action → Dependency changes
+    ↓
+React: "New effect needed!"
+    ↓
+1. Run cleanup from OLD effect (ignore = true)
+2. Run NEW effect (new ignore = false)
+```
+
+**Result**: Old async operations complete but can't update state (ignored).
+
+### When to Use Cleanup
+
+- **Async operations**: API calls, timers, subscriptions
+- **Event listeners**: Window resize, scroll, keyboard
+- **Intervals/Timeouts**: `setInterval`, `setTimeout`
+- **WebSocket connections**: Real-time data streams
+
+### Alternative: AbortController
+
+Modern approach using browser API:
+
+```typescript
+useEffect(() => {
+    const controller = new AbortController();
+    
+    fetch(url, { signal: controller.signal })
+        .then(data => setState(data))
+        .catch(err => {
+            if (err.name === 'AbortError') return; // Cancelled
+            console.error(err);
+        });
+    
+    return () => controller.abort();  // Cancel fetch
+}, [url]);
+```
+
+**Advantage**: Actually cancels network request (saves bandwidth).
+
+---
+
+## API Response Handling
+
+### HTTP Status Codes and Response Bodies
+
+Not all successful API responses return JSON data:
+
+| Status Code | Meaning | Response Body |
+|------------|---------|---------------|
+| 200 OK | Success with data | JSON/XML/etc |
+| 201 Created | Resource created | Often JSON of new resource |
+| 204 No Content | Success, no data | **EMPTY** |
+| 304 Not Modified | Cached version valid | **EMPTY** |
+
+### Common Error: Parsing Empty Responses
+
+```typescript
+// ❌ WRONG: Assumes all responses have JSON
+async function deleteItem(id) {
+    const response = await fetch(`/api/item/${id}`, { method: 'DELETE' });
+    return await response.json();  // 💥 Crashes on 204!
+}
+```
+
+**Error**: `SyntaxError: Unexpected end of JSON input`
+
+### Checking for Response Body
+
+```typescript
+// ✅ CORRECT: Handle empty responses
+async function deleteItem(id): Promise<void> {
+    const response = await fetch(`/api/item/${id}`, { method: 'DELETE' });
+    
+    if (!response.ok) {
+        throw new Error(`Delete failed: ${response.statusText}`);
+    }
+    
+    // No return = returns undefined (void)
+}
+```
+
+**Key Practice**: Always check API documentation for expected response format before implementing handlers.
+
+---
+
+## CSS Grid Responsive Design
+
+### Understanding `auto-fill` vs `auto-fit`
+
+CSS Grid can automatically calculate column count based on container width:
+
+```css
+grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+```
+
+**How it works**:
+
+1. **Container width**: Browser measures available space
+2. **Calculate columns**: `width ÷ (minWidth + gap)` = max columns
+3. **Distribute space**: Columns grow from `250px` to share remaining space
+
+**`auto-fill` vs `auto-fit`**:
+
+- **`auto-fill`**: Creates ghost columns if space exists (grid maintains width)
+- **`auto-fit`**: Collapses empty columns (items expand to fill)
+
+### Responsive Without Media Queries
+
+Traditional approach (verbose):
+
+```css
+.grid { grid-template-columns: repeat(6, 1fr); }
+@media (max-width: 1400px) { .grid { grid-template-columns: repeat(5, 1fr); } }
+@media (max-width: 1200px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+/* ... more breakpoints ... */
+```
+
+Modern approach (automatic):
+
+```css
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+```
+
+**Single rule handles all screen sizes!**
+
+### The `minmax()` Function
+
+```css
+minmax(250px, 1fr)
+```
+
+- **First value (min)**: Smallest allowed width
+- **Second value (max)**: Largest allowed width (`1fr` = equal fraction of remaining space)
+
+**Behavior**:
+
+- If container > `(250px × columns) + gaps`: Each column gets equal share of extra space
+- If container < minimum needed: Grid drops to fewer columns automatically
+
+### Layout Constraints in Vite Apps
+
+Default Vite React template includes centering styles that limit app width:
+
+```css
+/* Common constraint pattern */
+body {
+    display: flex;
+    place-items: center;  /* Centers in viewport */
+}
+
+#root {
+    max-width: 1280px;  /* Caps app width */
+}
+```
+
+**Effect**: App stays narrow on wide screens, creating wasted space.
+
+**Solution**: Remove constraints for full-width layouts, or keep for centered card-style apps.
+
+---
+
+## Data-Driven Styling
+
+### Backend-Controlled UI
+
+Instead of hardcoding styles in frontend, APIs can provide styling information:
+
+**API Provides Colors**:
+
+```json
+{
+    "type": "electric",
+    "color": "#F8D030"  // Backend defines this
+}
+```
+
+**Frontend Applies Colors**:
+
+```typescript
+<span style={{ color: type.color }}>
+    {type.name}
+</span>
+```
+
+### Benefits of API-Driven Styling
+
+1. **Consistency**: All clients (web, mobile, desktop) use same colors
+2. **Centralized Updates**: Change color in one place (backend)
+3. **No Mapping Logic**: Frontend doesn't need color lookup tables
+4. **Dynamic Themes**: Backend can return different colors per user/theme
+
+### When to Use Frontend-Defined Styles
+
+Use CSS/frontend styling for:
+
+- **Layout/Structure**: Grids, flexbox, spacing
+- **Interaction States**: Hover, focus, active
+- **Responsive Design**: Media queries, breakpoints
+- **Animations**: Transitions, keyframes
+
+Use API-driven styling for:
+
+- **Content-Specific Colors**: Status colors, type colors, category colors
+- **User Preferences**: Theme colors, accessibility settings
+- **Dynamic Content**: User-generated content styling
+
+### Separation of Concerns
+
+**Good Architecture**:
+
+- **Frontend**: Handles "how to display"
+- **Backend**: Provides "what to display" (including color metadata)
+- **Design System**: Both reference shared tokens (optional)
